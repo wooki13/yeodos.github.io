@@ -1,270 +1,371 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>여도초 스탬프 투어</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        :root { --primary: #4a90e2; --success: #27ae60; --warn: #e67e22; --gray: #f4f7f6; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--gray); color: #333; line-height: 1.6; }
-        .container { max-width: 500px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
-        .page { flex: 1; padding: 20px; display: flex; flex-direction: column; }
-        .hidden { display: none !important; }
-        .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; position: relative; }
-        h1 { margin: 0 0 10px; font-size: 24px; color: var(--primary); }
-        input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 15px; font-size: 16px; }
-        button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button.primary { background: var(--primary); color: white; }
-        button.secondary { background: #eee; color: #555; margin-top: 10px; }
-        .stamp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
-        .stamp { background: #eee; border-radius: 12px; aspect-ratio: 1/1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; color: #aaa; border: 2px dashed #ccc; }
-        .stamp.done { background: #e3f2fd; border: 2px solid var(--primary); color: var(--primary); font-weight: bold; }
-        #qr-reader { width: 100%; border-radius: 12px; overflow: hidden; background: #000; }
-        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 50px; font-size: 14px; opacity: 0; transition: 0.3s; z-index: 1000; pointer-events: none; }
-        .toast.show { opacity: 1; bottom: 50px; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px; background: white; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        th { background: #eee; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>여도초 스탬프 투어</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    :root{
+      --primary:#4a90e2; --success:#27ae60; --warn:#e67e22; --bg:#f4f7f6;
+    }
+    *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+    body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:#222;}
+    .container{max-width:520px; margin:0 auto; min-height:100vh;}
+    .page{padding:18px;}
+    .hidden{display:none !important;}
+    .card{background:#fff; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,.08); padding:20px; margin-bottom:14px;}
+    h1{margin:0 0 10px; font-size:24px; color:var(--primary);}
+    p{margin:0 0 14px; color:#666;}
+    input{width:100%; padding:12px; font-size:16px; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;}
+    button{width:100%; padding:13px; border:0; border-radius:10px; font-weight:700; font-size:15px; cursor:pointer;}
+    button:active{transform:scale(.99);}
+    .primary{background:var(--primary); color:#fff;}
+    .secondary{background:#ececec; color:#555; margin-top:8px;}
+
+    .topline{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+    .tiny{font-size:12px; color:#888;}
+    .logout-btn{width:auto; padding:6px 10px; font-size:12px;}
+
+    .stamp-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px;}
+    .stamp{
+      aspect-ratio:1/1; border:2px dashed #cfcfcf; border-radius:12px; background:#f2f2f2;
+      display:flex; align-items:center; justify-content:center; flex-direction:column; color:#9a9a9a;
+      font-size:12px; font-weight:600;
+    }
+    .stamp.done{background:#eaf4ff; border:2px solid #4a90e2; color:#2a70c2;}
+    .stamp .num{font-size:20px; line-height:1; margin-bottom:4px;}
+
+    #qr-reader{width:100%; border-radius:12px; overflow:hidden; background:#000; position:relative; z-index:1;}
+    #btn-back-scan{position:relative; z-index:20; pointer-events:auto; touch-action:manipulation;}
+
+    table{width:100%; border-collapse:collapse; font-size:12px; margin-top:10px;}
+    th,td{border:1px solid #ddd; padding:7px; text-align:center;}
+    th{background:#f1f1f1;}
+
+    .toast{
+      position:fixed; left:50%; transform:translateX(-50%); bottom:20px;
+      background:rgba(0,0,0,.86); color:#fff; padding:10px 16px; border-radius:999px;
+      font-size:13px; opacity:0; transition:.25s; z-index:9999; pointer-events:none;
+      max-width:88%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .toast.show{opacity:1; bottom:34px;}
+    .toast.success{background:var(--success);}
+    .toast.warn{background:var(--warn);}
+  </style>
 </head>
 <body>
-
 <div class="container">
-    <!-- 로그인 -->
-    <div id="page-login" class="page">
-        <div class="card">
-            <h1>여도초 스탬프 투어</h1>
-            <p>이메일을 입력하고 참여하세요</p>
-            <input type="email" id="email-input" placeholder="example@email.com" inputmode="email">
-            <button class="primary" onclick="loginWithEmail()">참여하기</button>
-            <button class="secondary" onclick="goPage('admin')" style="margin-top:50px; font-size:12px; opacity:0.5;">관리자 메뉴</button>
-        </div>
-    </div>
 
-    <!-- 홈 -->
-    <div id="page-home" class="page hidden">
-        <div class="card">
-            <div style="display:flex; justify-content: space-between; margin-bottom:10px;">
-                <small id="user-email" style="color:#888"></small>
-                <button onclick="logout()" style="width:auto; padding:4px 10px; font-size:10px; margin:0;">로그아웃</button>
-            </div>
-            <h1>내 스탬프: <span id="stamp-count">0</span> / 6</h1>
-            <div class="stamp-grid" id="stamp-grid"></div>
-            <button class="primary" style="padding:18px; font-size:18px;" onclick="goPage('scan')">📷 QR 스캔해서 적립</button>
-        </div>
+  <!-- LOGIN -->
+  <section id="page-login" class="page">
+    <div class="card">
+      <h1>스탬프 투어</h1>
+      <p>이메일로 시작하세요</p>
+      <input id="email-input" type="email" placeholder="example@email.com" inputmode="email" />
+      <button class="primary" onclick="loginWithEmail()">참여하기</button>
+      <!-- 관리자 버튼은 작게/아래쪽 -->
+      <button class="secondary" onclick="goPage('admin')" style="margin-top:32px; font-size:12px; opacity:.55;">관리자</button>
     </div>
+  </section>
 
-    <!-- 스캔 -->
-    <div id="page-scan" class="page hidden">
-        <div class="card">
-            <h1>QR 코드 스캔</h1>
-            <div id="qr-reader" style="margin-bottom:15px;"></div>
-            <button id="btn-back-scan" class="secondary" onclick="stopScanAndGoHome()">← 돌아가기</button>
-        </div>
+  <!-- HOME -->
+  <section id="page-home" class="page hidden">
+    <div class="card">
+      <div class="topline">
+        <span id="user-email" class="tiny"></span>
+        <button class="secondary logout-btn" onclick="logout()">로그아웃</button>
+      </div>
+      <h1>내 스탬프 <span id="stamp-count">0</span>/6</h1>
+      <div id="stamp-grid" class="stamp-grid"></div>
+      <button class="primary" style="margin-top:14px;" onclick="goPage('scan')">📷 QR 스캔</button>
     </div>
+  </section>
 
-    <!-- 관리자 -->
-    <div id="page-admin" class="page hidden">
-        <div class="card">
-            <h1>관리자 인증</h1>
-            <div id="admin-login">
-                <input type="password" id="admin-pw" placeholder="비밀번호 입력">
-                <button class="primary" onclick="adminLogin()">로그인</button>
-                <button class="secondary" onclick="goPage('login')">뒤로</button>
-            </div>
-            <div id="admin-view" class="hidden">
-                <div style="display:flex; gap:5px; margin-bottom:10px;">
-                    <button class="primary" onclick="exportCSV()" style="font-size:12px;">데이터 다운로드 (CSV)</button>
-                    <button class="secondary" onclick="resetAll()" style="font-size:12px; color:red;">전체 초기화</button>
-                </div>
-                <div style="overflow-y:auto; max-height:300px;">
-                    <table id="admin-table"></table>
-                </div>
-                <button class="secondary" onclick="goPage('login')" style="margin-top:20px;">나가기</button>
-            </div>
-        </div>
+  <!-- SCAN -->
+  <section id="page-scan" class="page hidden">
+    <div class="card">
+      <h1>QR 스캔</h1>
+      <p>부스 QR을 비춰주세요</p>
+      <div id="qr-reader"></div>
+      <button id="btn-back-scan" class="secondary" onclick="stopScanAndGoHome()">← 돌아가기</button>
     </div>
+  </section>
+
+  <!-- ADMIN (QR 생성 기능 없음) -->
+  <section id="page-admin" class="page hidden">
+    <div class="card">
+      <h1>관리자 인증</h1>
+      <div id="admin-login-box">
+        <input id="admin-pw" type="password" placeholder="비밀번호" />
+        <button class="primary" onclick="adminLogin()">로그인</button>
+        <button class="secondary" onclick="goPage('login')">뒤로</button>
+      </div>
+
+      <div id="admin-view" class="hidden">
+        <div style="display:flex; gap:8px;">
+          <button class="primary" style="font-size:12px;" onclick="exportCSV()">CSV 다운로드</button>
+          <button class="secondary" style="font-size:12px; color:#c0392b;" onclick="resetAll()">전체 초기화</button>
+        </div>
+        <div style="overflow:auto; max-height:320px;">
+          <table id="admin-table"></table>
+        </div>
+        <button class="secondary" onclick="goPage('login')">나가기</button>
+      </div>
+    </div>
+  </section>
 </div>
 
 <div id="toast" class="toast"></div>
 
 <script>
-// 보안 설정
-const SECRET_SALT = "yeodo_security_key_99"; 
-const ADMIN_HASH = "dueh1234"; // 비밀번호가 코드에 직접 노출되지 않게 하려면 추후 해싱 가능
+  // ===== 설정 =====
+  const TOTAL_BOOTHS = 6;
+  const SECRET_SALT = "yeodo_security_key_99";
+  const ADMIN_PASSWORD = "dueh1234"; // 화면에 표시 안 됨
 
-let currentUser = null;
-let qrScanner = null;
-let isTransitioning = false;
-let lastScannedText = "";
+  let currentUser = null;
+  let qrScanner = null;
+  let isTransitioning = false;
+  let lastScannedText = "";
+  let lastScannedAt = 0;
 
-/** [토큰 검증] **/
-function verifyToken(token) {
-    for (let i = 1; i <= 6; i++) {
-        // 제가 위에서 드린 QR 링크의 토큰 값들과 대조
-        if (token === btoa(`${SECRET_SALT}_booth_${i}`)) return i;
+  // ===== DB =====
+  function loadDB() {
+    try { return JSON.parse(localStorage.getItem("yeodo_db") || "{}"); }
+    catch(e){ return {}; }
+  }
+  function saveDB(db){ localStorage.setItem("yeodo_db", JSON.stringify(db)); }
+
+  // ===== 토큰 검증 =====
+  function tokenForBooth(n){
+    return btoa(`${SECRET_SALT}_booth_${n}`);
+  }
+  function verifyToken(token){
+    if(!token) return null;
+    for(let i=1;i<=TOTAL_BOOTHS;i++){
+      if(token === tokenForBooth(i)) return i;
     }
     return null;
-}
+  }
 
-/** [로그인 로직] **/
-function loginWithEmail() {
+  // ===== 사용자 =====
+  function loginWithEmail(){
     const email = document.getElementById("email-input").value.trim().toLowerCase();
-    if (!email.includes("@")) return showToast("정확한 이메일을 입력해 주세요.", "warn");
+    if(!email || !email.includes("@")) return showToast("올바른 이메일을 입력하세요", "warn");
     setUser(email);
-}
+  }
 
-function setUser(email) {
+  function setUser(email){
     currentUser = email;
     localStorage.setItem("yeodo_current_user", email);
     document.getElementById("user-email").textContent = email;
 
-    // URL 토큰 체크 (링크로 직접 들어온 경우)
-    const params = new URLSearchParams(window.location.search);
+    // URL 토큰 적립 처리
+    const params = new URLSearchParams(location.search);
     const token = params.get("token");
-    const boothNum = verifyToken(token);
-    
-    if (boothNum) {
-        addStamp(boothNum);
-        // 토큰 제거 (새로고침 중복 방지)
-        const newUrl = window.location.origin + window.location.pathname;
-        window.history.replaceState({}, document.title, newUrl);
+    const booth = verifyToken(token);
+    if(booth){
+      addStamp(booth);
+      history.replaceState({}, "", location.pathname); // 중복 적립 방지
     }
+
     goPage("home");
-}
+  }
 
-/** [스탬프 적립] **/
-function addStamp(num) {
-    const db = JSON.parse(localStorage.getItem("yeodo_db") || "{}");
-    if (!db[currentUser]) db[currentUser] = { booths: [], updatedAt: "" };
-    
-    if (db[currentUser].booths.includes(num)) {
-        showToast(num + "번 부스는 이미 적립되었습니다.", "warn");
-    } else {
-        db[currentUser].booths.push(num);
-        db[currentUser].updatedAt = new Date().toLocaleString();
-        localStorage.setItem("yeodo_db", JSON.stringify(db));
-        showToast(num + "번 부스 적립 완료!", "success");
+  function logout(){
+    localStorage.removeItem("yeodo_current_user");
+    currentUser = null;
+    goPage("login");
+  }
+
+  // ===== 스탬프 =====
+  function addStamp(boothNum){
+    if(!currentUser) return false;
+    const db = loadDB();
+    if(!db[currentUser]) db[currentUser] = { booths: [], updatedAt: "" };
+    const user = db[currentUser];
+
+    if(user.booths.includes(boothNum)){
+      showToast(`${boothNum}번 부스는 이미 적립됨`, "warn");
+      return false;
     }
-}
 
-/** [QR 스캐너] **/
-async function startScan() {
-    if (isTransitioning) return;
-    qrScanner = new Html5Qrcode("qr-reader");
-    const config = { fps: 10, qrbox: 250 };
+    user.booths.push(boothNum);
+    user.booths.sort((a,b)=>a-b);
+    user.updatedAt = new Date().toISOString();
+    db[currentUser] = user;
+    saveDB(db);
 
-    try {
-        await qrScanner.start({ facingMode: "environment" }, config, 
-        (text) => {
-            if (isTransitioning) return;
-            isTransitioning = true;
-            
-            let token = "";
-            try {
-                const url = new URL(text);
-                token = url.searchParams.get("token") || text;
-            } catch(e) { token = text; }
-
-            const boothNum = verifyToken(token);
-            if (boothNum) {
-                addStamp(boothNum);
-                stopScanAndGoHome();
-            } else {
-                showToast("유효하지 않은 보안 QR입니다.", "warn");
-                isTransitioning = false;
-            }
-        }, () => {});
-    } catch (e) { showToast("카메라를 열 수 없습니다.", "warn"); }
-}
-
-async function stopScanAndGoHome() {
-    if (qrScanner) {
-        try { await qrScanner.stop(); await qrScanner.clear(); } catch(e){}
-        qrScanner = null;
+    showToast(`✅ ${boothNum}번 부스 적립 완료`, "success");
+    if(user.booths.length === TOTAL_BOOTHS){
+      setTimeout(()=>showToast("🎉 6개 모두 완료!", "success"), 800);
     }
-    isTransitioning = false;
-    goPage("home");
-}
+    return true;
+  }
 
-/** [공통 UI 로직] **/
-function renderStampBoard() {
-    const db = JSON.parse(localStorage.getItem("yeodo_db") || "{}");
+  function renderStampBoard(){
+    if(!currentUser) return;
+    const db = loadDB();
     const user = db[currentUser] || { booths: [] };
+
     document.getElementById("stamp-count").textContent = user.booths.length;
     const grid = document.getElementById("stamp-grid");
     grid.innerHTML = "";
-    for (let i = 1; i <= 6; i++) {
-        const done = user.booths.includes(i);
-        grid.innerHTML += `<div class="stamp ${done?'done':''}"><div>${i}번</div></div>`;
+    for(let i=1;i<=TOTAL_BOOTHS;i++){
+      const done = user.booths.includes(i);
+      const el = document.createElement("div");
+      el.className = "stamp" + (done ? " done" : "");
+      el.innerHTML = `<div class="num">${i}</div><div>${done ? "완료" : "미완료"}</div>`;
+      grid.appendChild(el);
     }
-}
+  }
 
-function goPage(name) {
-    document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
-    document.getElementById("page-" + name).classList.remove("hidden");
-    if (name === "home") renderStampBoard();
-    if (name === "scan") setTimeout(startScan, 300);
-}
+  // ===== QR =====
+  async function startScan(){
+    if(isTransitioning) return;
+    await stopScannerOnly();
 
-function showToast(m, t="") { 
-    const toast = document.getElementById("toast");
-    toast.textContent = m; toast.className = "toast show " + t;
-    setTimeout(() => toast.className = "toast", 2500);
-}
+    qrScanner = new Html5Qrcode("qr-reader");
 
-/** [관리자 기능] **/
-function adminLogin() {
+    const config = { fps: 8, qrbox: { width: 220, height: 220 }, aspectRatio: 1.3333 };
+
+    try{
+      await qrScanner.start(
+        { facingMode: "environment" },
+        config,
+        onScanSuccess,
+        () => {}
+      );
+    }catch(e){
+      showToast("카메라 실행 실패(권한 확인)", "warn");
+    }
+  }
+
+  async function onScanSuccess(decodedText){
+    if(isTransitioning) return;
+
+    const now = Date.now();
+    if(decodedText === lastScannedText && (now - lastScannedAt) < 2000) return;
+    lastScannedText = decodedText;
+    lastScannedAt = now;
+
+    isTransitioning = true;
+
+    let token = null;
+    try{
+      const u = new URL(decodedText);
+      token = u.searchParams.get("token");
+    }catch(e){
+      token = decodedText; // 텍스트 토큰 QR 대응
+    }
+
+    const booth = verifyToken(token);
+    if(!booth){
+      showToast("유효하지 않은 QR", "warn");
+      isTransitioning = false;
+      return;
+    }
+
+    addStamp(booth);
+    await stopScannerOnly();
+    goPage("home");
+    isTransitioning = false;
+  }
+
+  async function stopScannerOnly(){
+    if(!qrScanner) return;
+    const s = qrScanner;
+    qrScanner = null;
+    try{ await s.stop(); }catch(e){}
+    try{ await s.clear(); }catch(e){}
+  }
+
+  async function stopScanAndGoHome(){
+    if(isTransitioning) return;
+    isTransitioning = true;
+    await stopScannerOnly();
+    goPage("home");
+    isTransitioning = false;
+  }
+
+  // ===== 관리자 (생성 기능 없음) =====
+  function adminLogin(){
     const pw = document.getElementById("admin-pw").value;
-    if (pw === ADMIN_HASH) {
-        document.getElementById("admin-login").classList.add("hidden");
-        document.getElementById("admin-view").classList.remove("hidden");
-        renderAdmin();
-    } else showToast("비밀번호가 틀렸습니다.", "warn");
-}
+    if(pw !== ADMIN_PASSWORD){
+      showToast("비밀번호 오류", "warn");
+      return;
+    }
+    document.getElementById("admin-login-box").classList.add("hidden");
+    document.getElementById("admin-view").classList.remove("hidden");
+    renderAdmin();
+  }
 
-function renderAdmin() {
-    const db = JSON.parse(localStorage.getItem("yeodo_db") || "{}");
+  function renderAdmin(){
+    const db = loadDB();
     const table = document.getElementById("admin-table");
-    table.innerHTML = "<tr><th>사용자(Email)</th><th>보유</th></tr>";
-    Object.keys(db).forEach(email => {
-        table.innerHTML += `<tr><td>${email}</td><td>${db[email].booths.length}개 완료</td></tr>`;
+    table.innerHTML = "<tr><th>이메일</th><th>개수</th><th>목록</th></tr>";
+    Object.keys(db).forEach(email=>{
+      const u = db[email];
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${email}</td><td>${u.booths.length}</td><td>${u.booths.join(", ")}</td>`;
+      table.appendChild(tr);
     });
-}
+  }
 
-function exportCSV() {
-    const db = JSON.parse(localStorage.getItem("yeodo_db") || "{}");
-    let csv = "\ufeff이메일,적립개수,적립목록,최종시간\n";
-    Object.keys(db).forEach(e => {
-        csv += `${e},${db[e].booths.length},"${db[e].booths.join(",")}",${db[e].updatedAt}\n`;
+  function exportCSV(){
+    const db = loadDB();
+    let csv = "\ufeffemail,count,booths,updatedAt\n";
+    Object.keys(db).forEach(email=>{
+      const u = db[email];
+      csv += `${email},${u.booths.length},"${u.booths.join("/")}",${u.updatedAt || ""}\n`;
     });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "stamp_data.csv";
+    a.download = `stamps_${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
-}
+  }
 
-function resetAll() {
-    if (confirm("모든 데이터를 삭제할까요?")) {
-        localStorage.removeItem("yeodo_db");
-        renderAdmin();
-        showToast("데이터가 초기화되었습니다.");
+  function resetAll(){
+    if(!confirm("모든 데이터를 삭제할까요?")) return;
+    localStorage.removeItem("yeodo_db");
+    renderAdmin();
+    showToast("초기화 완료", "success");
+  }
+
+  // ===== 페이지 =====
+  function goPage(name){
+    document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
+    document.getElementById("page-"+name).classList.remove("hidden");
+
+    if(name==="home") renderStampBoard();
+    if(name==="scan") setTimeout(startScan, 180);
+    if(name!=="scan") stopScannerOnly();
+  }
+
+  function showToast(msg, type=""){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "toast show " + type;
+    setTimeout(()=>{ t.className = "toast"; }, 2200);
+  }
+
+  document.addEventListener("visibilitychange", async ()=>{
+    const scanVisible = !document.getElementById("page-scan").classList.contains("hidden");
+    if(!scanVisible) return;
+    if(document.hidden){
+      await stopScannerOnly();
+    }else{
+      setTimeout(startScan, 220);
     }
-}
+  });
 
-function logout() {
-    localStorage.removeItem("yeodo_current_user");
-    location.reload();
-}
-
-// 시작
-(function init() {
+  (function init(){
     const saved = localStorage.getItem("yeodo_current_user");
-    if (saved) setUser(saved); else goPage("login");
-})();
+    if(saved) setUser(saved);
+    else goPage("login");
+  })();
 </script>
 </body>
 </html>
